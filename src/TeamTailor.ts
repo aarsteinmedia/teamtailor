@@ -232,20 +232,20 @@ export default class Teamtailor {
     data: string,
     callBack: (resp: APIResponse) => void
   ) {
-    let request: XMLHttpRequest
-    const isIE8 = 'XDomainRequest' in window,
-      response = () => {
-        callBack(JSON.parse(request.responseText))
-      }
-    if (isIE8) {
-      request = new (window as any).XDomainRequest()
-      request.onprogress = () => true
-      request.onload = response
-      request.open('GET', data)
-      request.send()
-      return
+    // let request: XMLHttpRequest
+    // const isIE8 = 'XDomainRequest' in window,
+    const response = () => {
+      callBack(JSON.parse(request.responseText))
     }
-    request = new XMLHttpRequest()
+    // if (isIE8) {
+    //   request = new (window as any).XDomainRequest()
+    //   request.onprogress = () => true
+    //   request.onload = response
+    //   request.open('GET', data)
+    //   request.send()
+    //   return
+    // }
+    const request = new XMLHttpRequest()
     request.open('GET', data, true)
     request.onreadystatechange = function () {
       if (this.readyState === 4 && this.status >= 200 && this.status < 400) {
@@ -397,15 +397,16 @@ export default class Teamtailor {
         this.createRegionSpan(jobData),
         this.createLocationSpan(jobData),
         this.createStatusSpan(jobData, data),
-      ].filter((el) => el !== null),
-      spanLength = spanArr.length - 1
+      ].filter((e) => e !== null),
+      { length } = spanArr
 
-    for (let i = 0; i < spanLength; i++) {
+    for (let i = 0; i < length; i++) {
       wrapperSpan.appendChild(spanArr[i])
-      if (i < spanLength) {
+      if (i < length - 1) {
         wrapperSpan.appendChild(document.createTextNode(' - '))
       }
     }
+
     return wrapperSpan
   }
   private static createLocationSpan(jobData: JobData) {

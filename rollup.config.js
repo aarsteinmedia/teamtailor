@@ -50,9 +50,9 @@ const isProd = process.env.NODE_ENV !== 'development',
       isProd && minify(),
       isProd && summary(),
       !isProd &&
-      serve({
-        open: true,
-      }),
+        serve({
+          open: true,
+        }),
       !isProd && livereload(),
     ],
   }
