@@ -5,7 +5,14 @@
   "main": "./dist/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "rimraf ./dist",
+    "build": "rollup -c",
+    "prebuild:types": "rimraf ./types ",
+    "dev": "rollup -c -w --environment NODE_ENV:development",
+    "lint:js": "eslint",
+    "lint:js:fix": "eslint --fix",
+    "lint:css": "npx stylelint **/*.css",
+    "lint:css:fix": "npx stylelint **/*.css --fix"
   },
   "keywords": [],
   "author": "",
@@ -14,6 +21,8 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.7",
     "@eslint/js": "^9.22.0",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@swc/core": "^1.11.11",
     "@types/node": "^22.13.10",
@@ -28,11 +37,25 @@
     "rollup": "^4.36.0",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-serve": "^3.0.0",
+    "rollup-plugin-summary": "^3.0.0",
     "rollup-plugin-swc3": "^0.12.1",
     "rollup-plugin-typescript-paths": "^1.5.0",
     "tsc-alias": "^1.8.11",
     "tslib": "^2.8.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.27.0"
+  },
+  "browserslist": {
+    "production": [
+      "defaults",
+      ">0.3%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
