@@ -14,6 +14,7 @@ import {
   Texts,
 } from '@/types'
 export default class Teamtailor {
+  private static API_VERSION = 20161108
   private static departments: Departments = {}
   private static locations: Locations = {}
   private static regions: Regions = {}
@@ -26,16 +27,26 @@ export default class Teamtailor {
   private static roles: Roles = {}
   private static texts: Texts = {}
   static init(data: InitData) {
+    // Validate required fields
     if (!data.apiKey && !data.company) {
       throw new Error('Missing API Key')
     }
-    this.apiRequest(this.prepareRequest(data), (t) => {
-      const widget =
-          data.jobsWidget || document.getElementById('teamtailor-jobs-widget'),
-        jobWrapper = this.createElement('div', 'teamtailor-jobs__job-wrapper')
-      widget.appendChild(jobWrapper)
-      this.texts = t.meta.texts
 
+    // Prepare and send the API request
+    this.apiRequest(this.prepareRequest(data), (response) => {
+      // Get the widget container or create a default one
+      const widget =
+        data.jobsWidget || document.getElementById('teamtailor-jobs-widget')
+      const jobWrapper = this.createElement(
+        'div',
+        'teamtailor-jobs__job-wrapper'
+      )
+      widget.appendChild(jobWrapper)
+
+      // Set texts from the response metadata
+      this.texts = response.meta.texts
+
+      // Update return types with names from the response texts
       const { length } = this.returnTypes
       for (let i = 0; i < length; ++i) {
         const { value } = this.returnTypes[i]
@@ -43,47 +54,60 @@ export default class Teamtailor {
           this.returnTypes[i].name = this.texts[value]
         }
       }
-      if (
-        (this.addToWrapper(widget, t, data),
+
+      // Add job data to the widget
+      this.addToWrapper(widget, response, data)
+
+      // Check if filters are needed
+      const shouldAddFilters =
         ((data.companySelect ||
           data.departmentSelect ||
           data.locationSelect ||
           data.languageSelect ||
           data.regionSelect) &&
           (!data.preselectedDepartment || !data.preselectedLocation)) ||
-          data.remoteStatusSelect ||
-          data.roleSelect)
-      ) {
+        data.remoteStatusSelect ||
+        data.roleSelect
+
+      if (shouldAddFilters) {
+        // Create a filters container and insert it before the job wrapper
         const filters: HTMLDivElement = this.createElement(
           'div',
           'teamtailor-jobs__filters'
         )
         widget.insertBefore(filters, jobWrapper)
 
+        // Add company filter if enabled
         if (data.companySelect) {
           this.appendData('companies', widget, data)
         }
 
+        // Add department filter if enabled and no preselected department
         if (data.departmentSelect && !data.preselectedDepartment) {
           this.appendData('departments', widget, data)
         }
 
+        // Add role filter if enabled
         if (data.roleSelect) {
           this.appendData('roles', widget, data)
         }
 
+        // Add region filter if enabled
         if (data.regionSelect) {
           this.appendData('regions', widget, data)
         }
 
+        // Add location filter if enabled and no preselected location
         if (data.locationSelect && !data.preselectedLocation) {
           this.appendData('locations', widget, data)
         }
 
+        // Add language filter if enabled and no preselected language
         if (data.languageSelect && !data.preselectedLanguage) {
           this.appendData('career-sites', widget, data)
         }
 
+        // Add remote status filter if enabled
         if (data.remoteStatusSelect) {
           this.appendData('remote_statuses', widget, data)
         }
@@ -146,7 +170,8 @@ export default class Teamtailor {
     }
   }
   private static addAPIKey(uri: string, data: InitData) {
-    return `${uri}&api_key=${data.apiKey}&api_version=20161108&`
+    const operator = uri.endsWith('&') || uri.endsWith('?') ? '' : '?'
+    return `${uri}${operator}api_key=${data.apiKey}&api_version=${this.API_VERSION}`
   }
   private static addPagination(
     container: HTMLElement,
@@ -202,21 +227,25 @@ export default class Teamtailor {
   ) {
     let value: string, jobDataArr: JobData[]
     const getReturnType = (jobData: JobData) => {
-        if (selector === 'locations') {
-          if (jobData.attributes) {
-            return jobData.attributes.name && jobData.attributes.name !== ''
-              ? jobData.attributes.name
-              : jobData.attributes.city
+        switch (selector) {
+          case 'locations': {
+            if (jobData.attributes) {
+              return jobData.attributes.name && jobData.attributes.name !== ''
+                ? jobData.attributes.name
+                : jobData.attributes.city
+            }
+            return jobData.name
           }
-          return jobData.name
-        } else if (selector === 'remote_statuses') {
-          return jobData
-        } else if (selector === 'career-sites') {
-          return {
-            name: jobData.attributes.name,
-            value: jobData.attributes['language-code'],
+          case 'remote_statuses':
+            return jobData
+          case 'career-sites': {
+            return {
+              name: jobData.attributes.name,
+              value: jobData.attributes['language-code'],
+            }
           }
         }
+
         return jobData.attributes ? jobData.attributes.name : jobData.name
       },
       createOptionElement = (unit: ReturnType | string) => {
@@ -331,7 +360,7 @@ export default class Teamtailor {
     }
   }
   private static apiRequest(
-    data: string,
+    uri: string,
     callBack: (resp: APIResponse) => void
   ) {
     // let request: XMLHttpRequest
@@ -348,9 +377,14 @@ export default class Teamtailor {
     //   return
     // }
     const request = new XMLHttpRequest()
-    request.open('GET', data, true)
-    request.onreadystatechange = function () {
-      if (this.readyState === 4 && this.status >= 200 && this.status < 400) {
+    request.open('GET', uri, true)
+    request.onreadystatechange = ({ target }) => {
+      if (
+        target instanceof XMLHttpRequest &&
+        target.readyState === 4 &&
+        target.status >= 200 &&
+        target.status < 400
+      ) {
         response()
       }
     }
@@ -374,6 +408,7 @@ export default class Teamtailor {
         case 'departments':
         case 'regions':
         case 'career-sites':
+        case 'companies':
           uri += `&fields[${selector}]=name`
           break
       }
@@ -706,7 +741,7 @@ export default class Teamtailor {
 
     // Case 2: API key provided
     uri = data.url || 'https://api.teamtailor.com/v1/jobs?'
-    uri = this.addAPIKey(uri, data)
+    uri = `${this.addAPIKey(uri, data)}&`
     uri += `include=${joinArguments()}&`
 
     // Add fields for departments, roles, locations, and regions
@@ -776,6 +811,10 @@ export default class Teamtailor {
     // Add remote status filter
     if (data.remote_statuses) {
       uri += `filter[remote-status]=${data.remote_statuses}&`
+    }
+
+    if (uri.endsWith('?') || uri.endsWith('&')) {
+      uri = uri.slice(0, -1)
     }
 
     return uri
