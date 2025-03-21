@@ -1,4 +1,4 @@
-import {
+import type {
   APIResponse,
   Department,
   Departments,
@@ -13,6 +13,8 @@ import {
   Roles,
   Texts,
 } from '@/types'
+
+let TEAMTAILOR_JOB_SCRIPT_LOADED = false
 export default class Teamtailor {
   private static API_VERSION = 20161108
   private static departments: Departments = {}
@@ -29,6 +31,10 @@ export default class Teamtailor {
   static init(data: InitData) {
     // Validate required fields
     if (!data.apiKey && !data.company) {
+      if (data.jobsWidget) {
+        data.jobsWidget.innerText = 'Missing API Key'
+      }
+
       throw new Error('Missing API Key')
     }
 
@@ -115,13 +121,10 @@ export default class Teamtailor {
     })
   }
   static run() {
-    if (
-      'TEAMTAILOR_JOB_SCRIPT_LOADED' in window &&
-      window.TEAMTAILOR_JOB_SCRIPT_LOADED
-    ) {
+    if (TEAMTAILOR_JOB_SCRIPT_LOADED) {
       return
     }
-    ;(window as any).TEAMTAILOR_JOB_SCRIPT_LOADED = true
+    TEAMTAILOR_JOB_SCRIPT_LOADED = true
     this.addStyles()
     const jobsWidgets: HTMLDivElement[] = Array.from(
         document.querySelectorAll('.teamtailor-jobs-widget')
@@ -170,7 +173,10 @@ export default class Teamtailor {
     }
   }
   private static addAPIKey(uri: string, data: InitData) {
-    const operator = uri.endsWith('&') || uri.endsWith('?') ? '' : '?'
+    let operator = ''
+    if (!uri.endsWith('&') && !uri.endsWith('?')) {
+      operator = uri.includes('?') ? '&' : '?'
+    }
     return `${uri}${operator}api_key=${data.apiKey}&api_version=${this.API_VERSION}`
   }
   private static addPagination(
@@ -574,9 +580,10 @@ export default class Teamtailor {
     const source = uri.split('/')[2]
 
     uri += `?utm_campaign=jobs-widget&utm_source=${source}&utm_content=jobs&utm_medium=web`
-    anchor.setAttribute('href', uri)
-    if (data.popup) {
-      anchor.setAttribute('target', '_blank')
+    anchor.href = uri
+    if (data.popup || new URL(uri).origin !== location.origin) {
+      anchor.target = '_blank'
+      anchor.rel = 'noreferrer'
     }
     return anchor
   }
