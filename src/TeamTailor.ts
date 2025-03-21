@@ -282,8 +282,8 @@ export default class Teamtailor {
     container: HTMLElement,
     data: InitData
   ) {
+    console.log(selector)
     let uri: string
-
     if (data.apiKey) {
       uri = `https://tt.teamtailor.com/api/${selector}?company_id=${data.company}`
     } else {

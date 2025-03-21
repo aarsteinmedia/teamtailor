@@ -1,4 +1,4 @@
-import Teamtailor from '@/TeamTailor'
+import Teamtailor from '@/legacy'
 
 if (
   document.readyState === 'complete' ||
