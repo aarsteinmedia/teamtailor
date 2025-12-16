@@ -9,6 +9,6 @@
       "decorators": true,
       "dynamicImport": true
     },
-    "target": "es2022"
+    "target": "es2023"
   }
 }
