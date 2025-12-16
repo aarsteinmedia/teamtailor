@@ -2,6 +2,7 @@ export interface InitData {
   apiKey: null | string
   'career-sites'?: string
   companies?: string
+  companiesExclude: null | string[]
   company: null | string
   companySelect: null | string
   departments?: string
@@ -59,7 +60,7 @@ export interface ReturnType {
 }
 
 export interface JobData {
-  attributes: {
+  attributes?: {
     'company-name'?: string
     city?: string
     name?: string

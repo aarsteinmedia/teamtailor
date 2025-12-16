@@ -20,11 +20,47 @@ let TEAMTAILOR_JOB_SCRIPT_LOADED = false
 /**
  * Helper function to join common arguments.
  */
-const joinArguments = () =>
-  ['department',
-    'role',
-    'regions',
-    'locations'].join(',')
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+const createElement = <T extends HTMLElement>(
+    tagName: string,
+    className?: string | null,
+    content?: string
+  ) => {
+    const newElement = document.createElement(tagName) as T
+
+    if (className) {
+      newElement.className = className
+    }
+    if (content) {
+      if (newElement.textContent) {
+        newElement.textContent = content
+
+        return newElement
+      }
+      newElement.innerText = content
+    }
+
+    return newElement
+  },
+  createOptionElement = (unit: ReturnType | string) => {
+    const content: string = (unit as ReturnType).name || (unit as string),
+      val = (unit as ReturnType).value || (unit as string),
+      option: HTMLOptionElement = createElement(
+        'option',
+        null,
+        content
+      )
+
+    option.value = val
+
+    return option
+  },
+
+  joinArguments = () =>
+    ['department',
+      'role',
+      'regions',
+      'locations'].join(',')
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export default class Teamtailor {
@@ -55,11 +91,15 @@ export default class Teamtailor {
     this.apiRequest(this.prepareRequest(data), (response) => {
       // Get the widget container or create a default one
       const widget =
-        data.jobsWidget ?? document.getElementById('teamtailor-jobs-widget')
-      const jobWrapper = this.createElement('div',
-        'teamtailor-jobs__job-wrapper')
+        (data.jobsWidget ?? document.getElementById('teamtailor-jobs-widget')) as HTMLDivElement | null,
+        jobWrapper = createElement('div',
+          'teamtailor-jobs__job-wrapper')
 
-      widget?.appendChild(jobWrapper)
+      if (!widget) {
+        return
+      }
+
+      widget.appendChild(jobWrapper)
 
       // Set texts from the response metadata
       this.texts = response.meta.texts
@@ -68,14 +108,16 @@ export default class Teamtailor {
       const { length } = this.returnTypes
 
       for (let i = 0; i < length; ++i) {
-        if (!this.returnTypes[i]) {
+        const returnType = this.returnTypes[i]
+
+        if (!returnType) {
           continue
         }
 
-        const { value } = this.returnTypes[i]
+        const { value } = returnType
 
         if (this.texts[value]) {
-          this.returnTypes[i].name = this.texts[value]
+          returnType.name = this.texts[value]
         }
       }
 
@@ -97,7 +139,7 @@ export default class Teamtailor {
 
       if (shouldAddFilters) {
         // Create a filters container and insert it before the job wrapper
-        const filters: HTMLDivElement = this.createElement('div',
+        const filters: HTMLDivElement = createElement('div',
           'teamtailor-jobs__filters')
 
         widget.insertBefore(filters, jobWrapper)
@@ -166,11 +208,12 @@ export default class Teamtailor {
     for (let i = 0; i < length; ++i) {
       this.init({
         apiKey: jobsWidgets[i]?.getAttribute('data-teamtailor-api-key') || null,
+        companiesExclude: jobsWidgets[i]?.getAttribute('data-teamtailor-company-exclude')?.split(',') ?? null,
         company: jobsWidgets[i]?.getAttribute('data-teamtailor-company') || null,
         companySelect: jobsWidgets[i]?.getAttribute('data-teamtailor-group-company-select') || null,
         departmentSelect: jobsWidgets[i]?.getAttribute('data-teamtailor-department-select') || null,
         feed: jobsWidgets[i]?.getAttribute('data-teamtailor-feed') || 'public',
-        jobsWidget: jobsWidgets[i] || null,
+        jobsWidget: jobsWidgets[i] ?? null,
         languageSelect: jobsWidgets[i]?.getAttribute('data-teamtailor-language-select') || null,
         limit: jobsWidgets[i]?.getAttribute('data-teamtailor-limit')
           ? Number(jobsWidgets[i]?.getAttribute('data-teamtailor-limit'))
@@ -203,7 +246,7 @@ export default class Teamtailor {
     apiResponse: APIResponse,
     data: InitData
   ) {
-    const paginationWrapper: HTMLDivElement = this.createElement('div',
+    const paginationWrapper: HTMLDivElement = createElement('div',
       'teamtailor-jobs__pagination')
 
     if (apiResponse.links.prev) {
@@ -215,10 +258,9 @@ export default class Teamtailor {
     }
     if (
       apiResponse.links.prev &&
-      apiResponse.links.next &&
-      paginationWrapper.appendChild(document.createTextNode(' \u2014 ')),
       apiResponse.links.next
     ) {
+      paginationWrapper.appendChild(document.createTextNode(' \u2014 '))
       const anchor = this.addPaginatonLink(
         'next', container, apiResponse, data
       )
@@ -235,7 +277,7 @@ export default class Teamtailor {
     apiResponse: APIResponse,
     data: InitData
   ) {
-    const anchor: HTMLAnchorElement = this.createElement(
+    const anchor: HTMLAnchorElement = createElement(
       'a',
       `teamtailor-jobs__pagination__${place}`,
       apiResponse.meta.texts[place]
@@ -258,7 +300,7 @@ export default class Teamtailor {
 
   private static addSelect(
     apiResponse: APIResponse,
-    selector: string,
+    selector: keyof InitData,
     widget: HTMLDivElement,
     wrapper: HTMLDivElement,
     data: InitData
@@ -280,61 +322,50 @@ export default class Teamtailor {
           }
           case 'career-sites': {
             return {
-              name: jobData.attributes.name,
-              value: jobData.attributes['language-code'],
+              name: jobData.attributes?.name,
+              value: jobData.attributes?.['language-code'],
             }
           }
+
+          default: {
+            return jobData.attributes ? jobData.attributes.name : jobData.name
+          }
         }
-
-        return jobData.attributes ? jobData.attributes.name : jobData.name
-      },
-      createOptionElement = (unit: ReturnType | string) => {
-        const content: string = (unit as ReturnType).name || (unit as string),
-          value = (unit as ReturnType).value || (unit as string),
-          option: HTMLOptionElement = this.createElement(
-            'option',
-            null,
-            content
-          )
-
-        option.value = value
-
-        return option
       },
       parseSelect = (
-        selectElement: HTMLSelectElement,
-        unit: (Region | Department | Location | Role)[],
-        selector: string
+        selectEl: HTMLSelectElement,
+        unit: (Region | Department | Location | Role | JobData)[],
+        sel: string
       ) => {
         let units: string[] = []
         const { length } = unit
 
         for (let i = 0; i < length; ++i) {
-          units.push(getReturnType(unit[i] as any) as any)
+          units.push(getReturnType(unit[i] as JobData) as string)
         }
         units = units.filter((
-          unit, i, arr
-        ) => arr.indexOf(unit) === i).sort()
+          u, i, arr
+        ) => arr.indexOf(u) === i).sort()
 
-        if (selector !== 'remote_statuses') {
+        if (sel !== 'remote_statuses') {
           units.sort()
         }
         const { length: rLength } = units
 
         for (let i = 0; i < rLength; ++i) {
-          selectElement.appendChild(createOptionElement(units[i]))
+          selectEl.appendChild(createOptionElement(units[i] as string))
         }
       }
 
     if (selector === 'remote_statuses') {
-      value = this.texts['all-remote-statuses']
-      jobDataArr = apiResponse as any
+      value = this.texts['all-remote-statuses'] as string
+      jobDataArr = apiResponse as unknown as JobData[]
     } else if (data.apiKey) {
-      value = apiResponse.meta.texts.all
+      value = apiResponse.meta.texts.all as string
       jobDataArr = apiResponse.data
     } else {
-      value = apiResponse.text as any
-      jobDataArr = apiResponse.items as any
+      value = apiResponse.text as unknown as string
+      jobDataArr = apiResponse.items as JobData[]
     }
 
     const selectElement = this.populateSelect(value, wrapper)
@@ -343,11 +374,18 @@ export default class Teamtailor {
       if (!(target instanceof HTMLSelectElement)) {
         return
       }
-      if (target.value?.length > 0) {
-        ;(data as any)[selector] = `"${target.value.replaceAll('&', '%26')}"`
-      } else {
-        ;(data as any)[selector] = ''
+      if (selector !== 'jobsWidget') {
+        if (target.value.length > 0) {
+          // TODO:
+          // @ts-expect-error: typing
+          data[selector] = `"${target.value.replaceAll('&', '%26')}"`
+        } else {
+          // TODO:
+          // @ts-expect-error: typing
+          data[selector] = ''
+        }
       }
+
       this.apiRequest(this.prepareRequest(data), (e) => {
         this.addToWrapper(
           widget, e, data
@@ -355,14 +393,13 @@ export default class Teamtailor {
       })
     })
     parseSelect(
-      selectElement, jobDataArr as any, selector
+      selectElement, jobDataArr, selector
     )
   }
 
   private static addStyles() {
     let styleContent = ''
-    const headElement = document.head || document.querySelector('head'),
-      styleElement = document.createElement('style')
+    const styleElement = document.createElement('style')
 
     styleContent += '.teamtailor-jobs__job-title { display: block; }'
     styleContent += '.teamtailor-jobs__job { margin-bottom: 1em; }'
@@ -377,12 +414,12 @@ export default class Teamtailor {
       // TODO: This looks like a mistake
       styleElement.styleSheet.cssText = styleContent
 
-      headElement.appendChild(styleElement)
+      document.head.appendChild(styleElement)
 
       return
     }
     styleElement.appendChild(document.createTextNode(styleContent))
-    headElement.appendChild(styleElement)
+    document.head.appendChild(styleElement)
   }
 
   private static addToWrapper(
@@ -408,7 +445,7 @@ export default class Teamtailor {
     const { length } = jobDataArr
 
     for (let i = 0; i < length; ++i) {
-      wrapper.appendChild(this.appendJobbData(jobDataArr[i], data))
+      wrapper.appendChild(this.appendJobbData(jobDataArr[i] as JobData, data))
     }
     if (data.pagination) {
       wrapper.appendChild(this.addPagination(
@@ -419,22 +456,10 @@ export default class Teamtailor {
 
   private static apiRequest(uri: string,
     callBack: (resp: APIResponse) => void) {
-    // let request: XMLHttpRequest
-    /**
-     * Const isIE8 = 'XDomainRequest' in window,.
-     */
-    const response = () => {
-      callBack(JSON.parse(request.responseText))
-    }
-    // if (isIE8) {
-    //   request = new (window as any).XDomainRequest()
-    //   request.onprogress = () => true
-    //   request.onload = response
-    //   request.open('GET', data)
-    //   request.send()
-    //   return
-    // }
-    const request = new XMLHttpRequest()
+    const request = new XMLHttpRequest(),
+      response = () => {
+        callBack(JSON.parse(request.responseText) as APIResponse)
+      }
 
     request.open(
       'GET', uri, true
@@ -453,7 +478,7 @@ export default class Teamtailor {
   }
 
   private static appendData(
-    selector: string,
+    selector: keyof InitData,
     container: HTMLDivElement,
     data: InitData
   ) {
@@ -463,6 +488,7 @@ export default class Teamtailor {
       uri = data.url || `https://api.teamtailor.com/v1/${selector}?`
       uri = this.addAPIKey(uri, data)
 
+      // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
       switch (selector) {
         case 'locations': {
           uri += '&fields[locations]=name,city'
@@ -484,7 +510,7 @@ export default class Teamtailor {
       uri = `https://tt.teamtailor.com/api/${selector}?company_id=${data.company}`
     }
 
-    const selectWrapper: HTMLDivElement = this.createElement('div',
+    const selectWrapper: HTMLDivElement = createElement('div',
       'teamtailor-jobs__select-wrapper')
 
     container
@@ -493,7 +519,7 @@ export default class Teamtailor {
 
     if (selector === 'remote_statuses') {
       this.addSelect(
-        this.returnTypes as any,
+        this.returnTypes as unknown as APIResponse,
         selector,
         container,
         selectWrapper,
@@ -505,7 +531,7 @@ export default class Teamtailor {
     this.handleFallback(
       uri,
       (resp) => {
-        if (!resp.items?.length && !resp.data?.length) {
+        if (!resp.items?.length && resp.data.length === 0) {
           return
         }
         this.addSelect(
@@ -517,7 +543,7 @@ export default class Teamtailor {
   }
 
   private static appendJobbData(jobData: JobData, data: InitData) {
-    const jobHolder: HTMLDivElement = this.createElement('div',
+    const jobHolder: HTMLDivElement = createElement('div',
       'teamtailor-jobs__job')
 
     jobHolder.appendChild(this.createTitleLink(jobData, data))
@@ -527,10 +553,10 @@ export default class Teamtailor {
   }
 
   private static createCompanySpan(jobData: JobData) {
-    const company = jobData.attributes['company-name']
+    const company = jobData.attributes?.['company-name']
 
     return company
-      ? this.createElement<HTMLSpanElement>(
+      ? createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__company',
         company
@@ -542,7 +568,7 @@ export default class Teamtailor {
     const department = this.getDepartment(jobData)
 
     return department
-      ? this.createElement<HTMLSpanElement>(
+      ? createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__department',
         department
@@ -550,31 +576,8 @@ export default class Teamtailor {
       : null
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  private static createElement<T extends HTMLElement>(
-    tagName: string,
-    className?: string | null,
-    content?: string
-  ) {
-    const newElement = document.createElement(tagName) as T
-
-    if (className) {
-      newElement.className = className
-    }
-    if (content) {
-      if (newElement.textContent) {
-        newElement.textContent = content
-
-        return newElement
-      }
-      newElement.innerText = content
-    }
-
-    return newElement
-  }
-
   private static createInfoSpan(jobData: JobData, data: InitData) {
-    const wrapperSpan: HTMLSpanElement = this.createElement('span',
+    const wrapperSpan: HTMLSpanElement = createElement('span',
         'teamtailor-jobs__job-info'),
       spanArr = [
         this.createCompanySpan(jobData),
@@ -606,7 +609,7 @@ export default class Teamtailor {
     const location = this.getLocation(jobData)
 
     return location
-      ? this.createElement<HTMLSpanElement>(
+      ? createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__location',
         location
@@ -618,7 +621,7 @@ export default class Teamtailor {
     const region = this.getRegion(jobData)
 
     return region
-      ? this.createElement<HTMLSpanElement>(
+      ? createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__region',
         region
@@ -630,7 +633,7 @@ export default class Teamtailor {
     const role = this.getRole(jobData)
 
     return role
-      ? this.createElement<HTMLSpanElement>(
+      ? createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__role',
         role
@@ -642,7 +645,7 @@ export default class Teamtailor {
     const status = this.getStatus(jobData)
 
     if (status && data.remoteStatusSelect) {
-      return this.createElement<HTMLSpanElement>(
+      return createElement<HTMLSpanElement>(
         'span',
         'teamtailor-jobs__remote_status',
         status
@@ -653,8 +656,8 @@ export default class Teamtailor {
   }
 
   private static createTitleLink(jobData: JobData, data: InitData) {
-    const anchorString = jobData.title || jobData.attributes.title,
-      anchor: HTMLAnchorElement = this.createElement(
+    const anchorString = jobData.title || jobData.attributes?.title,
+      anchor: HTMLAnchorElement = createElement(
         'a',
         'teamtailor-jobs__job-title',
         anchorString
@@ -675,10 +678,8 @@ export default class Teamtailor {
   }
 
   private static getDepartment(jobData: JobData) {
-    const department = jobData.department_name
-
-    if (department) {
-      return department
+    if (jobData.department_name) {
+      return jobData.department_name
     }
     if (jobData.relationships?.department.data) {
       const department =
@@ -750,7 +751,7 @@ export default class Teamtailor {
   }
 
   private static getStatus(jobData: JobData) {
-    const status = jobData.attributes['remote-status'],
+    const status = jobData.attributes?.['remote-status'],
       returnType = this.returnTypes.find(({ value }) => value === status)
 
     return returnType?.name ?? status
@@ -791,7 +792,7 @@ export default class Teamtailor {
   private static isURLInternal(jobData: JobData, data: InitData) {
     return (
       Boolean(jobData.links['careersite-job-internal-url']) &&
-      (jobData.attributes.internal || data.feed !== 'public')
+      (jobData.attributes?.internal || data.feed !== 'public')
     )
   }
 
@@ -819,17 +820,20 @@ export default class Teamtailor {
           this.regions[unit[i]?.id || 0] = unit[i] as Region
           break
         }
+        default: {
+          continue
+        }
       }
     }
   }
 
   private static populateSelect(value: string, container: HTMLElement) {
-    const option: HTMLOptionElement = this.createElement(
+    const option: HTMLOptionElement = createElement(
       'option', null, value
     )
 
     option.value = ''
-    const select: HTMLSelectElement = this.createElement('select',
+    const select: HTMLSelectElement = createElement('select',
       'teamtailor-jobs__select')
 
     select.appendChild(option)
