@@ -2,12 +2,13 @@ export interface InitData {
   apiKey: null | string
   'career-sites'?: string
   companies?: string
+  companiesExclude: null | string[]
   company: null | string
   companySelect: null | string
   departments?: string
   departmentSelect: null | string
   feed: string
-  jobsWidget: HTMLDivElement
+  jobsWidget: HTMLDivElement | null
   languageSelect: string | null
   limit: number | null
   locations?: string
@@ -26,21 +27,13 @@ export interface InitData {
   url?: string
 }
 
-export interface Locations {
-  [id: string]: Location
-}
+export interface Locations { [id: string]: Location }
 
-export interface Departments {
-  [id: string]: Department
-}
+export interface Departments { [id: string]: Department }
 
-export interface Roles {
-  [id: string]: Role
-}
+export interface Roles { [id: string]: Role }
 
-export interface Regions {
-  [id: string]: Region
-}
+export interface Regions { [id: string]: Region }
 
 interface Unit {
   attributes: {
@@ -48,26 +41,16 @@ interface Unit {
     city: string
   }
   id: string
-  links: {
-    self: string
-  }
+  links: { self: string }
 }
 
-export interface Region extends Unit {
-  type: 'regions'
-}
+export interface Region extends Unit { type: 'regions' }
 
-export interface Department extends Unit {
-  type: 'departments'
-}
+export interface Department extends Unit { type: 'departments' }
 
-export interface Location extends Unit {
-  type: 'locations'
-}
+export interface Location extends Unit { type: 'locations' }
 
-export interface Role extends Unit {
-  type: 'roles'
-}
+export interface Role extends Unit { type: 'roles' }
 
 export interface ReturnType {
   data?: unknown[]
@@ -77,7 +60,7 @@ export interface ReturnType {
 }
 
 export interface JobData {
-  attributes: {
+  attributes?: {
     'company-name'?: string
     city?: string
     name?: string
@@ -124,7 +107,7 @@ export interface JobData {
   }
   location_name?: string
   name?: string
-  relationships: {
+  relationships?: {
     activities: {
       links: {
         self: string
