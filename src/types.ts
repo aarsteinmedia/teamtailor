@@ -2,7 +2,6 @@ export interface InitData {
   apiKey: null | string
   'career-sites'?: string
   companies?: string
-  companiesExclude: null | string[]
   company: null | string
   companySelect: null | string
   departments?: string
@@ -13,6 +12,7 @@ export interface InitData {
   limit: number | null
   locations?: string
   locationSelect: string | null
+  locationsExclude: null | string[]
   pagination: string | null
   popup: string | null
   preselectedDepartment: string | null

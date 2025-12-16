@@ -208,7 +208,6 @@ export default class Teamtailor {
     for (let i = 0; i < length; ++i) {
       this.init({
         apiKey: jobsWidgets[i]?.getAttribute('data-teamtailor-api-key') || null,
-        companiesExclude: jobsWidgets[i]?.getAttribute('data-teamtailor-company-exclude')?.split(',') ?? null,
         company: jobsWidgets[i]?.getAttribute('data-teamtailor-company') || null,
         companySelect: jobsWidgets[i]?.getAttribute('data-teamtailor-group-company-select') || null,
         departmentSelect: jobsWidgets[i]?.getAttribute('data-teamtailor-department-select') || null,
@@ -219,6 +218,7 @@ export default class Teamtailor {
           ? Number(jobsWidgets[i]?.getAttribute('data-teamtailor-limit'))
           : null,
         locationSelect: jobsWidgets[i]?.getAttribute('data-teamtailor-location-select') || null,
+        locationsExclude: jobsWidgets[i]?.getAttribute('data-teamtailor-locations-exclude')?.split(',') ?? null,
         pagination: jobsWidgets[i]?.getAttribute('data-teamtailor-pagination') || null,
         popup: jobsWidgets[i]?.getAttribute('data-teamtailor-popup') || null,
         preselectedDepartment: jobsWidgets[i]?.getAttribute('data-teamtailor-department') || null,
@@ -445,6 +445,10 @@ export default class Teamtailor {
     const { length } = jobDataArr
 
     for (let i = 0; i < length; ++i) {
+      if (data.locationsExclude?.includes(this.getLocation(jobDataArr[i] as JobData) ?? '')) {
+        continue
+      }
+
       wrapper.appendChild(this.appendJobbData(jobDataArr[i] as JobData, data))
     }
     if (data.pagination) {
