@@ -1,0 +1,5 @@
+allowBuilds:
+  '@swc/core': true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - eslint-plugin-regexp@3.3.1

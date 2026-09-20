@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import livereload from 'rollup-plugin-livereload'
-import serve from 'rollup-plugin-opener'
+import {serve} from 'rollup-plugin-opener'
 import pluginSummary from 'rollup-plugin-summary'
 import { minify, swc } from 'rollup-plugin-swc3'
 import { typescriptPaths } from 'rollup-plugin-typescript-paths'
@@ -20,12 +20,6 @@ const isProd = process.env.NODE_ENV !== 'development',
   ),
   unpkg: RollupOptions = {
     input,
-    // onwarn(warning, warn) {
-    //   if (warning.code === 'CIRCULAR_DEPENDENCY') {
-    //     return
-    //   }
-    //   warn(warning)
-    // },
     output: {
       exports: 'named',
       extend: true,

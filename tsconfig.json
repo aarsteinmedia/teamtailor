@@ -1,34 +1,32 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
   "ts-node": {
     "swc": true
   },
   "compilerOptions": {
-    "baseUrl": ".",
     "declaration": true,
     "declarationDir": "types",
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "experimentalDecorators": true,
     "lib": [
       "DOM",
       "DOM.Iterable",
-      "ESNext"
+      "ES2024",
     ],
-    "composite": false,
-    "module": "preserve",
+    "types": [
+      "node"
+    ],
+    "module": "ESNext",
     "moduleResolution": "Bundler",
-    "noEmit": true,
-    "allowImportingTsExtensions": false,
+    "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "noImplicitOverride": true,
+    "noImplicitReturns": true,
     "noImplicitThis": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "allowJs": false,
-    "checkJs": false,
-    "experimentalDecorators": false,
-    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "outDir": "dist",
     "plugins": [
       {
@@ -37,17 +35,10 @@
     ],
     "removeComments": true,
     "resolveJsonModule": true,
+    "rootDir": ".",
     "strict": true,
-    "target": "ES2023",
+    "target": "ES2024",
     "useDefineForClassFields": false,
-    "verbatimModuleSyntax": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "exactOptionalPropertyTypes": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
     "paths": {
       "@/*": [
         "./src/*"
@@ -55,8 +46,7 @@
     }
   },
   "include": [
-    "src/**/*",
-    "*.config.ts"
+    "**/*.ts"
   ],
   "exclude": [
     "**/node_modules",

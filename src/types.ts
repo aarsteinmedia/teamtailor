@@ -27,13 +27,13 @@ export interface InitData {
   url?: string
 }
 
-export interface Locations {[id: string]: Location}
+export interface Locations { [id: string]: Location }
 
-export interface Departments {[id: string]: Department}
+export interface Departments { [id: string]: Department }
 
-export interface Roles {[id: string]: Role}
+export interface Roles { [id: string]: Role }
 
-export interface Regions {[id: string]: Region}
+export interface Regions { [id: string]: Region }
 
 interface Unit {
   attributes: {
@@ -44,13 +44,13 @@ interface Unit {
   links: { self: string }
 }
 
-export interface Region extends Unit {type: 'regions'}
+export interface Region extends Unit { type: 'regions' }
 
-export interface Department extends Unit {type: 'departments'}
+export interface Department extends Unit { type: 'departments' }
 
-export interface Location extends Unit {type: 'locations'}
+export interface Location extends Unit { type: 'locations' }
 
-export interface Role extends Unit {type: 'roles'}
+export interface Role extends Unit { type: 'roles' }
 
 export interface ReturnType {
   data?: unknown[]

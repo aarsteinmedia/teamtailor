@@ -91,7 +91,7 @@ export default class Teamtailor {
     this.apiRequest(this.prepareRequest(data), (response) => {
       // Get the widget container or create a default one
       const widget =
-        (data.jobsWidget ?? document.getElementById('teamtailor-jobs-widget')) as HTMLDivElement | null,
+          (data.jobsWidget ?? document.getElementById('teamtailor-jobs-widget')) as HTMLDivElement | null,
         jobWrapper = createElement('div',
           'teamtailor-jobs__job-wrapper')
 
@@ -108,13 +108,8 @@ export default class Teamtailor {
       const { length } = this.returnTypes
 
       for (let i = 0; i < length; ++i) {
-        const returnType = this.returnTypes[i]
-
-        if (!returnType) {
-          continue
-        }
-
-        const { value } = returnType
+        const returnType = this.returnTypes[i],
+          { value } = returnType
 
         if (this.texts[value]) {
           returnType.name = this.texts[value]
@@ -250,7 +245,7 @@ export default class Teamtailor {
       'teamtailor-jobs__pagination')
 
     if (apiResponse.links.prev) {
-      const anchor = this.addPaginatonLink(
+      const anchor = this.addPaginationLink(
         'prev', container, apiResponse, data
       )
 
@@ -261,7 +256,7 @@ export default class Teamtailor {
       apiResponse.links.next
     ) {
       paginationWrapper.appendChild(document.createTextNode(' \u2014 '))
-      const anchor = this.addPaginatonLink(
+      const anchor = this.addPaginationLink(
         'next', container, apiResponse, data
       )
 
@@ -271,7 +266,7 @@ export default class Teamtailor {
     return paginationWrapper
   }
 
-  private static addPaginatonLink(
+  private static addPaginationLink(
     place: 'first' | 'last' | 'next' | 'prev',
     container: HTMLElement,
     apiResponse: APIResponse,
@@ -306,6 +301,7 @@ export default class Teamtailor {
     data: InitData
   ) {
     let value: string, jobDataArr: JobData[]
+    // eslint-disable-next-line sonarjs/function-return-type
     const getReturnType = (jobData: JobData) => {
         switch (selector) {
           case 'locations': {
@@ -345,23 +341,23 @@ export default class Teamtailor {
         }
         units = units.filter((
           u, i, arr
-        ) => arr.indexOf(u) === i).sort()
+        ) => arr.indexOf(u) === i).toSorted((a, b) => a.localeCompare(b))
 
         if (sel !== 'remote_statuses') {
-          units.sort()
+          units.sort((a, b) => a.localeCompare(b))
         }
         const { length: rLength } = units
 
         for (let i = 0; i < rLength; ++i) {
-          selectEl.appendChild(createOptionElement(units[i] as string))
+          selectEl.appendChild(createOptionElement(units[i]))
         }
       }
 
     if (selector === 'remote_statuses') {
-      value = this.texts['all-remote-statuses'] as string
+      value = this.texts['all-remote-statuses']
       jobDataArr = apiResponse as unknown as JobData[]
     } else if (data.apiKey) {
-      value = apiResponse.meta.texts.all as string
+      value = apiResponse.meta.texts.all
       jobDataArr = apiResponse.data
     } else {
       value = apiResponse.text as unknown as string
@@ -445,11 +441,11 @@ export default class Teamtailor {
     const { length } = jobDataArr
 
     for (let i = 0; i < length; ++i) {
-      if (data.locationsExclude?.includes(this.getLocation(jobDataArr[i] as JobData) ?? '')) {
+      if (data.locationsExclude?.includes(this.getLocation(jobDataArr[i]) ?? '')) {
         continue
       }
 
-      wrapper.appendChild(this.appendJobbData(jobDataArr[i] as JobData, data))
+      wrapper.appendChild(this.appendJobData(jobDataArr[i], data))
     }
     if (data.pagination) {
       wrapper.appendChild(this.addPagination(
@@ -546,7 +542,7 @@ export default class Teamtailor {
     )
   }
 
-  private static appendJobbData(jobData: JobData, data: InitData) {
+  private static appendJobData(jobData: JobData, data: InitData) {
     const jobHolder: HTMLDivElement = createElement('div',
       'teamtailor-jobs__job')
 
@@ -595,10 +591,6 @@ export default class Teamtailor {
 
     for (let i = 0; i < length; i++) {
       const span = spanArr[i]
-
-      if (!span) {
-        continue
-      }
 
       wrapperSpan.appendChild(span)
       if (i < length - 1) {
@@ -689,6 +681,7 @@ export default class Teamtailor {
       const department =
         this.departments[jobData.relationships.department.data.id]
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (department) {
         return department.attributes.name
       }
@@ -708,6 +701,7 @@ export default class Teamtailor {
         .map((data) => {
           const loc = this.locations[data.id]
 
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (loc) {
             if (loc.attributes.name && loc.attributes.name !== '') {
               return loc.attributes.name
@@ -733,6 +727,7 @@ export default class Teamtailor {
       .map((data) => {
         const region = this.regions[data.id]
 
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (region) {
           return region.attributes.name
         }
@@ -746,6 +741,7 @@ export default class Teamtailor {
     if (jobData.relationships?.role.data) {
       const role = this.roles[jobData.relationships.role.data.id]
 
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (role) {
         return role.attributes.name
       }
@@ -765,10 +761,10 @@ export default class Teamtailor {
     uri: string,
     callback: (resp: APIResponse) => void,
     data: InitData,
-    jobbdataArr?: JobData[]
+    jobDataArr?: JobData[]
   ) {
-    // eslint-disable-next-line no-param-reassign
-    jobbdataArr = jobbdataArr ?? []
+
+    jobDataArr = jobDataArr ?? []
 
     if (!data.apiKey) {
       this.apiRequest(uri, callback)
@@ -777,17 +773,17 @@ export default class Teamtailor {
     }
 
     this.apiRequest(uri, (resp) => {
-      // eslint-disable-next-line no-param-reassign
-      jobbdataArr = jobbdataArr?.concat(resp.data) ?? []
+
+      jobDataArr = jobDataArr?.concat(resp.data) ?? []
 
       if (resp.links.next) {
         const r = this.addAPIKey(resp.links.next, data)
 
         this.handleFallback(
-          r, callback, data, jobbdataArr
+          r, callback, data, jobDataArr
         )
       } else {
-        resp.data = jobbdataArr
+        resp.data = jobDataArr
         callback(resp)
       }
     })
